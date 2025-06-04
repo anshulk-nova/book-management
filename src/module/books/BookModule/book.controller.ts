@@ -1,34 +1,64 @@
-import { Body, Controller, Delete, Get, Param, Post, Patch, Put, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Patch,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 
 import { BookService } from './book.service';
 import { CreateBookDto } from './Dto/create-book.dto';
-
 import { UpdateBookDto } from './Dto/update-book.dto';
+import { Book } from './book.schema';
+import { NotFoundException } from '@nestjs/common';
 
-export enum SortBy {
-    TITLE = 'title',
-    AUTHOR = 'author',
-    PUBLISHED_DATE = 'publishedDate',
-}
 
 @Controller('book')
 export class BookController {
-    constructor(private bookService: BookService) { }
-    
-    // @Query('isAvailable', ParseBoolPipe) isAvailable?: boolean,
-    @Put('/book')
-    addBook(@Body() book: CreateBookDto): string {
-        return this.bookService.addBook(book);
-    }
+  constructor(private readonly bookService: BookService) {}
 
-    @Patch('/book')
-    updateBook(@Body() book: UpdateBookDto, @Param('id') updatebookid: string): string {
+  // Create a new book
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async addBook(@Body() bookDto: CreateBookDto): Promise<Book> {
+    return this.bookService.addBook(bookDto);
+  }
 
-        return this.bookService.updateBook(updatebookid, book);
-    }
+  // Update a book by ID
+@Patch(':id')
+async updateBook(
+  @Param('id') id: string,
+  @Body() bookDto: UpdateBookDto,
+): Promise<Book> {
+  const updated = await this.bookService.updateBook(id, bookDto);
+  if (!updated) throw new NotFoundException(`Book with id ${id} not found`);
+  return updated;
+}
 
-    @Delete('/book')
-    deleteBook(@Param('id') bookId: string): string {
-        return this.bookService.deleteBook(bookId);
-    }
+
+  // Delete a book by ID
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteBook(@Param('id') id: string): Promise<{ deleted: boolean }> {
+    return this.bookService.deleteBook(id);
+  }
+
+  // Get all books
+  @Get()
+  async getAllBooks(): Promise<Book[]> {
+    return this.bookService.getAllBooks();
+  }
+
+  // Get a specific book by ID
+  @Get(':id')
+async getBookById(@Param('id') id: string): Promise<Book> {
+  const book = await this.bookService.getBookById(id);
+  if (!book) throw new NotFoundException(`Book with id ${id} not found`);
+  return book;
+}
+
 }

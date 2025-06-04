@@ -9,12 +9,6 @@ export class UpdateBookDto {
     @IsString()
     author: string;
 
-    @IsDateString()
-    publishedDate: Date;
-
-    @IsString()
-    genre: string;
-
     @IsBoolean()
     @Type(() => Boolean)
     isAvailable: boolean;

@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsString, IsNotEmpty, IsBoolean, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean, IsDateString, IsOptional } from 'class-validator';
+
 export class CreateBookDto {
 
     @IsString()
@@ -9,11 +10,11 @@ export class CreateBookDto {
     @IsString()
     author: string;
 
-    @IsDateString()
-    publishedDate: Date;
+    @IsOptional()
+    publishedDate?: string;  // <- string type for date strings
 
-    @IsString()
-    genre: string;
+    @IsOptional()
+    genre?: string;
 
     @IsBoolean()
     @Type(() => Boolean)

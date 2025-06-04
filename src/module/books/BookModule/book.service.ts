@@ -1,53 +1,38 @@
-// import { HttpException, Injectable } from '@nestjs/common';
-import { Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { CreateBookDto } from './Dto/create-book.dto';
 import { UpdateBookDto } from './Dto/update-book.dto';
+import { Book, BookDocument } from './book.schema';  // Import Mongoose schema and type
 
-import { Book } from './book.entity';
-import { SortBy } from './book.controller';
 @Injectable()
 export class BookService {
-    public books: Book[] = [];
+  constructor(@InjectModel(Book.name) private bookModel: Model<BookDocument>) {}
 
-    addBook(book: CreateBookDto): string {
-        const newBook = new Book(
-            book.author,
-            book.genre,
-            book.isAvailable,
-            book.publishedDate,
-            book.title,
-        );
+  // Add a book to MongoDB
+  async addBook(bookDto: CreateBookDto): Promise<Book> {
+    const createdBook = new this.bookModel(bookDto);
+    return await createdBook.save();
+  }
 
-        this.books.push(newBook);
+  // Update book by ID
+  async updateBook(id: string, bookDto: UpdateBookDto): Promise<Book | null> {
+    return this.bookModel.findByIdAndUpdate(id, bookDto, { new: true }).exec();
+  }
 
-        return 'Book added successfully';
-    }
+  // Delete book by ID
+  async deleteBook(id: string): Promise<{ deleted: boolean }> {
+    const result = await this.bookModel.deleteOne({ _id: id }).exec();
+    return { deleted: result.deletedCount === 1 };
+  }
 
+  // Optional: find book by ID
+  async getBookById(id: string): Promise<Book | null> {
+    return this.bookModel.findById(id).exec();
+  }
 
-    updateBook(updatebid: string, book: UpdateBookDto): string {
-
-        // const index = this.books.findIndex((b) => b.id === book.id);
-        const obj = this.books.find((b) => b.id === updatebid);
-        if (!obj)
-            return 'there is No any book with this id';
-        obj.title = book.title;
-        obj.author = book.author;
-        obj.genre = book.genre;
-        obj.isAvailable = book.isAvailable;
-        obj.publishedDate = book.publishedDate;
-
-        return 'Book updated successfully';
-        // return new BookNotFoundException('there is No any book is with id', 500); /// class add krke exception
-    }
-
-    deleteBook(bookid: string): string {
-
-        const originalLength = this.books.length;
-        this.books = this.books.filter((book) => book.id !== bookid);
-
-        if (this.books.length === originalLength) {
-             return 'there is No any book with this id';
-        }
-        return 'Book successfully deleted';
-    }
+  // Optional: get all books
+  async getAllBooks(): Promise<Book[]> {
+    return this.bookModel.find().exec();
+  }
 }
