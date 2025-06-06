@@ -42,7 +42,7 @@ export class UserBookService {
     return records.map((r) => r.bookId);
   }
 
-  // ✅ Main function: Get detailed book info accessed by a user
+  //  Main function: Get detailed book info accessed by a user
   async getDetailedBooksByUser(userId: string): Promise<any[]> {
     return await this.userBookModel.aggregate([
       {
