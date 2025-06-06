@@ -16,3 +16,24 @@
         }
     ]
 }
+
+
+// {
+//   "version": "0.2.0",
+//   "configurations": [
+//     {
+//       "type": "node",
+//       "request": "launch",
+//       "name": "Debug NestJS",
+//       "skipFiles": ["<node_internals>/**"],
+//       "program": "${workspaceFolder}/node_modules/.bin/nest",
+//       "args": ["start"],
+//       "autoAttachChildProcesses": true,
+//       "sourceMaps": true,
+//       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+//       "console": "integratedTerminal",
+//       "runtimeExecutable": "node",
+//       "runtimeArgs": ["--nolazy", "--inspect-brk"]
+//     }
+//   ]
+// }

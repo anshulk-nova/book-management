@@ -1,15 +1,25 @@
 import { Type } from 'class-transformer';
-import { IsString, IsBoolean, IsDateString } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, IsDateString } from 'class-validator';
 
 export class UpdateBookDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
 
-    @IsString()
-    title: string;
+  @IsOptional()
+  @IsString()
+  author?: string;
 
-    @IsString()
-    author: string;
+  @IsOptional()
+  @IsString()
+  genre?: string;
 
-    @IsBoolean()
-    @Type(() => Boolean)
-    isAvailable: boolean;
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  isAvailable?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  publishedDate?: string;
 }

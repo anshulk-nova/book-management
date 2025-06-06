@@ -1,38 +1,97 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateBookDto } from './Dto/create-book.dto';
-import { UpdateBookDto } from './Dto/update-book.dto';
-import { Book, BookDocument } from './book.schema';  // Import Mongoose schema and type
+
+import { CreateBookDto } from './dto/create-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
+import { Book, BookDocument } from './book.schema';
+import { BookStats, BookStatsDocument } from './book-stats.schema';
 
 @Injectable()
 export class BookService {
-  constructor(@InjectModel(Book.name) private bookModel: Model<BookDocument>) {}
+  constructor(
+    @InjectModel(Book.name) private bookModel: Model<BookDocument>,
+    @InjectModel(BookStats.name) private statsModel: Model<BookStatsDocument>,
+  ) {}
 
-  // Add a book to MongoDB
   async addBook(bookDto: CreateBookDto): Promise<Book> {
     const createdBook = new this.bookModel(bookDto);
-    return await createdBook.save();
+    await createdBook.save();
+
+    await this.statsModel.updateOne(
+      {},
+      { $inc: { totalAdded: 1 } },
+      { upsert: true },
+    );
+
+    return createdBook;
   }
 
-  // Update book by ID
-  async updateBook(id: string, bookDto: UpdateBookDto): Promise<Book | null> {
-    return this.bookModel.findByIdAndUpdate(id, bookDto, { new: true }).exec();
+  async updateBook(id: string, bookDto: UpdateBookDto): Promise<Book> {
+    const existingBook = await this.bookModel.findById(id);
+    if (!existingBook) throw new NotFoundException('Book not found');
+
+    const updateCounts: Record<string, number> = {};
+
+    if (bookDto.title && bookDto.title !== existingBook.title) {
+      updateCounts.titleUpdateCount = 1;
+    }
+    if (bookDto.author && bookDto.author !== existingBook.author) {
+      updateCounts.authorUpdateCount = 1;
+    }
+    if (bookDto.genre && bookDto.genre !== existingBook.genre) {
+      updateCounts.genreUpdateCount = 1;
+    }
+    if (
+      typeof bookDto.isAvailable === 'boolean' &&
+      bookDto.isAvailable !== existingBook.isAvailable
+    ) {
+      updateCounts.isAvailableUpdateCount = 1;
+    }
+    if (
+      bookDto.publishedDate &&
+      new Date(bookDto.publishedDate).getTime() !== new Date(existingBook.publishedDate).getTime()
+    ) {
+      updateCounts.publishedDateUpdateCount = 1;
+    }
+
+    const updatedBook = await this.bookModel.findByIdAndUpdate(id, bookDto, { new: true }).exec();
+
+    if (updatedBook) {
+      await this.statsModel.updateOne(
+        {},
+        {
+          $inc: {
+            totalUpdated: 1,
+            ...updateCounts,
+          },
+        },
+        { upsert: true },
+      );
+    }
+
+    return updatedBook!;
   }
 
-  // Delete book by ID
   async deleteBook(id: string): Promise<{ deleted: boolean }> {
-    const result = await this.bookModel.deleteOne({ _id: id }).exec();
-    return { deleted: result.deletedCount === 1 };
+    const result = await this.bookModel.findByIdAndDelete(id).exec();
+
+    if (result) {
+      await this.statsModel.updateOne({}, { $inc: { totalDeleted: 1 } }, { upsert: true });
+    }
+
+    return { deleted: !!result };
   }
 
-  // Optional: find book by ID
   async getBookById(id: string): Promise<Book | null> {
     return this.bookModel.findById(id).exec();
   }
 
-  // Optional: get all books
   async getAllBooks(): Promise<Book[]> {
     return this.bookModel.find().exec();
+  }
+
+  async getStats(): Promise<BookStats | null> {
+    return this.statsModel.findOne().exec();
   }
 }

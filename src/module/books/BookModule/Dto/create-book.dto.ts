@@ -16,6 +16,7 @@ export class CreateBookDto {
     @IsOptional()
     genre?: string;
 
+    @IsOptional()
     @IsBoolean()
     @Type(() => Boolean)
     isAvailable: boolean;
